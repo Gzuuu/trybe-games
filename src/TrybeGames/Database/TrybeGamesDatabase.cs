@@ -1,3 +1,5 @@
+using System.Reflection.Metadata.Ecma335;
+
 namespace TrybeGames;
 
 public class TrybeGamesDatabase
@@ -69,8 +71,23 @@ public class TrybeGamesDatabase
     // 9. Crie a funcionalidade de buscar todos os estúdios de jogos junto dos seus jogos desenvolvidos com suas pessoas jogadoras
     public List<StudioGamesPlayers> GetStudiosWithGamesAndPlayers()
     {
-        // Implementar
-        throw new NotImplementedException();
-    }
+        var result = from studio in GameStudios
+                 join game in Games on studio.Id equals game.DeveloperStudio
+                 from playerId in game.Players
+                 join player in Players on playerId equals player.Id
+                 where studio.Id == game.DeveloperStudio
+                 select new { Studio = studio, Game = game, Player = player } into data
+                 group data by data.Studio into studioGroup
+                 select new StudioGamesPlayers
+                 {
+                     GameStudioName = studioGroup.Key.Name,
+                     Games = studioGroup.GroupBy(groupItem => groupItem.Game).Select(gameGroup => new GamePlayer
+                     {
+                         GameName = gameGroup.Key.Name,
+                         Players = gameGroup.Select(item => item.Player).ToList()
+                     }).ToList()
+                 };
 
+    return result.ToList();
+    }
 }
